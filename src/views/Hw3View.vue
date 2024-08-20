@@ -53,6 +53,7 @@ const data = ref([
 ])
 
 const cart = ref([])
+const order = ref([])
 
 const addToCart = (item) => {
   cart.value.push({ ...item, quantity: 1, id: new Date().getTime() })
@@ -62,9 +63,21 @@ const removeFromCart = (item) => {
   cart.value = cart.value.filter((x) => x.id !== item.id)
 }
 
-const total = computed(() => {
+const sum = computed(() => {
   return cart.value.reduce((acc, item) => acc + item.price * item.quantity, 0)
 })
+const orderSum = ref(0)
+
+const checkOut = () => {
+  order.value = cart.value.map((item) => ({
+    name: item.name,
+    quantity: item.quantity,
+    totalPrice: item.price * item.quantity
+  }))
+
+  orderSum.value = sum.value
+  cart.value = []
+}
 </script>
 
 <template>
@@ -121,17 +134,17 @@ const total = computed(() => {
           </table>
           <div class="text-end mb-3" v-if="cart.length > 0">
             <h5>
-              總計: <span>${{ total }}</span>
+              總計: <span>${{ sum }}</span>
             </h5>
           </div>
           <textarea class="form-control mb-3" rows="3" placeholder="備註"></textarea>
           <div class="text-end">
-            <button class="btn btn-primary">送出</button>
+            <button class="btn btn-primary" @click="checkOut()">送出</button>
           </div>
         </div>
       </div>
       <hr />
-      <div class="row justify-content-center">
+      <div v-if="order.length > 0" class="row justify-content-center">
         <div class="col-8">
           <div class="card">
             <div class="card-body">
@@ -146,33 +159,26 @@ const total = computed(() => {
                     </tr>
                   </thead>
                   <tbody>
-                    <tr>
-                      <td>翡翠檸檬</td>
-                      <td>7</td>
-                      <td>385</td>
-                    </tr>
-                    <tr>
-                      <td>冬瓜檸檬</td>
-                      <td>7</td>
-                      <td>315</td>
-                    </tr>
-                    <tr>
-                      <td>冬瓜檸檬</td>
-                      <td>4</td>
-                      <td>180</td>
+                    <tr v-for="item in order" :key="item.id">
+                      <td>{{ item.name }}</td>
+                      <td>{{ item.quantity }}</td>
+                      <td>{{ item.totalPrice }}</td>
                     </tr>
                   </tbody>
                 </table>
                 <div class="text-end">備註: <span>都不要香菜</span></div>
                 <div class="text-end">
                   <h5>
-                    總計: <span>${{ total }}</span>
+                    總計: <span>${{ orderSum }}</span>
                   </h5>
                 </div>
               </div>
             </div>
           </div>
         </div>
+      </div>
+      <div v-else>
+        <h5 class="text-center">目前無訂單</h5>
       </div>
     </div>
   </div>
