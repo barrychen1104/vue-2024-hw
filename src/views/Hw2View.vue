@@ -15,7 +15,7 @@
         <input v-model="signInField.email" placeholder="Email" type="email" />
         <input v-model="signInField.password" placeholder="Password" type="password" />
         <button @click="signIn">Sign In</button>
-        <p class="message">Token: {{ signinRes }}</p>
+        <p class="message">{{ signInRes }}</p>
       </div>
 
       <div class="auth-form">
@@ -79,10 +79,11 @@ const signUp = async () => {
     console.log('res', res)
     signUpRes.value = res.data.uid
   } catch (err) {
-    console.log('err', err)
+    signUpMessage.value = `註冊失敗: ${err.message}`
   }
 }
 
+const signUpMessage = ref('')
 const signUpFields = ref({
   email: '',
   password: '',
@@ -94,19 +95,19 @@ const signInField = ref({
   email: '',
   password: ''
 })
-const signinRes = ref('')
+const signInRes = ref('')
 
 const signIn = async () => {
   try {
     const res = await axios.post(`${apiUrl}/users/sign_in`, signInField.value)
-    signinRes.value = res.data.token
+    signInRes.value = res.data.token
 
     // Set cookie with 1-day expiration
     const expirationDate = new Date()
     expirationDate.setDate(expirationDate.getDate() + 1)
     document.cookie = `customTodoToken=${res.data.token}; expires=${expirationDate.toUTCString()}; path=/`
   } catch (err) {
-    console.log('err', err)
+    signInRes.value = `登入失敗: ${err.message}`
   }
 }
 
@@ -130,11 +131,15 @@ const signOutToken = ref('')
 const signOutMessage = ref('')
 const signOut = async () => {
   try {
-    const res = await axios.get(`${apiUrl}/users/sign_out`, {
-      headers: {
-        authorization: signOutToken.value
+    const res = await axios.post(
+      `${apiUrl}/users/sign_out`,
+      {},
+      {
+        headers: {
+          authorization: signOutToken.value
+        }
       }
-    })
+    )
     console.log('res', res)
     signOutMessage.value = '登出成功'
   } catch (err) {
@@ -299,6 +304,8 @@ button:hover {
   margin-top: 10px;
   font-size: 0.9em;
   color: #666;
+  word-wrap: break-word; /* 讓文字自動換行 */
+  white-space: normal; /* 允許文字換行 */
 }
 
 .todo-section {
