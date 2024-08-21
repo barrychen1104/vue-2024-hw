@@ -1,5 +1,8 @@
 <script setup>
 import { ref, computed } from 'vue'
+import ProductList from '@/components/ProductList.vue'
+import CartTable from '@/components/CartTable.vue'
+import OrderDetails from '@/components/OrderDetails.vue'
 
 const data = ref([
   {
@@ -56,7 +59,12 @@ const cart = ref([])
 const order = ref([])
 
 const addToCart = (item) => {
-  cart.value.push({ ...item, quantity: 1, id: new Date().getTime() })
+  const exist = cart.value.find((x) => x.name === item.name)
+  if (!exist) {
+    cart.value.push({ ...item, quantity: 1, id: new Date().getTime() })
+  } else {
+    exist.quantity++
+  }
 }
 
 const removeFromCart = (item) => {
@@ -67,6 +75,8 @@ const sum = computed(() => {
   return cart.value.reduce((acc, item) => acc + item.price * item.quantity, 0)
 })
 const orderSum = ref(0)
+const remark = ref('')
+const orderRemark = ref('')
 
 const checkOut = () => {
   order.value = cart.value.map((item) => ({
@@ -76,6 +86,8 @@ const checkOut = () => {
   }))
 
   orderSum.value = sum.value
+  orderRemark.value = remark.value
+  remark.value = ''
   cart.value = []
 }
 </script>
@@ -85,96 +97,35 @@ const checkOut = () => {
     <div class="container mt-5">
       <div class="row">
         <div class="col-md-4">
-          <div class="list-group">
-            <a
-              v-for="item in data"
-              :key="item.id"
-              href="#"
-              class="list-group-item list-group-item-action"
-              @click="addToCart(item)"
-            >
-              <div class="d-flex w-100 justify-content-between">
-                <h5 class="mb-1">{{ item.name }}</h5>
-                <small>${{ item.price }}</small>
-              </div>
-              <p class="mb-1">{{ item.description }}</p>
-            </a>
-          </div>
+          <ProductList :products="data" @addToCart="addToCart" />
         </div>
         <div class="col-md-8">
-          <table class="table">
-            <thead>
-              <tr>
-                <th scope="col" width="50">操作</th>
-                <th scope="col">品項</th>
-                <th scope="col">描述</th>
-                <th scope="col" width="90">數量</th>
-                <th scope="col">單價</th>
-                <th scope="col">小計</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="item in cart" :key="item.id">
-                <td>
-                  <button type="button" class="btn btn-sm" @click="removeFromCart(item)">x</button>
-                </td>
-                <td>{{ item.name }}</td>
-                <td>
-                  <small>{{ item.description }}</small>
-                </td>
-                <td>
-                  <select class="form-select" v-model="item.quantity">
-                    <option v-for="n in 10" :key="n" :value="n">{{ n }}</option>
-                  </select>
-                </td>
-                <td>${{ item.price }}</td>
-                <td>${{ item.price * item.quantity }}</td>
-              </tr>
-            </tbody>
-          </table>
-          <div class="text-end mb-3" v-if="cart.length > 0">
-            <h5>
-              總計: <span>${{ sum }}</span>
-            </h5>
+          <CartTable :cart="cart" @removeFromCart="removeFromCart" />
+          <div v-if="cart.length > 0">
+            <div class="text-end mb-3">
+              <h5>
+                總計: <span>${{ sum }}</span>
+              </h5>
+            </div>
+            <textarea
+              class="form-control mb-3"
+              rows="3"
+              placeholder="備註"
+              v-model="remark"
+            ></textarea>
+            <div class="text-end">
+              <button class="btn btn-primary" @click="checkOut()">送出</button>
+            </div>
           </div>
-          <textarea class="form-control mb-3" rows="3" placeholder="備註"></textarea>
-          <div class="text-end">
-            <button class="btn btn-primary" @click="checkOut()">送出</button>
+          <div v-else>
+            <h5 class="text-center">請選擇商品</h5>
           </div>
         </div>
       </div>
       <hr />
       <div v-if="order.length > 0" class="row justify-content-center">
         <div class="col-8">
-          <div class="card">
-            <div class="card-body">
-              <div class="card-title">
-                <h5>訂單</h5>
-                <table class="table">
-                  <thead>
-                    <tr>
-                      <th scope="col">品項</th>
-                      <th scope="col">數量</th>
-                      <th scope="col">小計</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr v-for="item in order" :key="item.id">
-                      <td>{{ item.name }}</td>
-                      <td>{{ item.quantity }}</td>
-                      <td>{{ item.totalPrice }}</td>
-                    </tr>
-                  </tbody>
-                </table>
-                <div class="text-end">備註: <span>都不要香菜</span></div>
-                <div class="text-end">
-                  <h5>
-                    總計: <span>${{ orderSum }}</span>
-                  </h5>
-                </div>
-              </div>
-            </div>
-          </div>
+          <OrderDetails :order="order" :orderSum="orderSum" :orderRemark="orderRemark" />
         </div>
       </div>
       <div v-else>
